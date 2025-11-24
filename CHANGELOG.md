@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.1.0] - 2025-11-24
+
+### Added
+- Automatic runtime camera permission handling on Android
+- Camera permissions are now requested automatically by the plugin when needed
+- No manual AndroidManifest.xml permission setup required
+- Torch (flashlight) control with three modes:
+  - `TorchMode.off`: Torch always off
+  - `TorchMode.auto`: Automatically turns on in low light (< 10 lux)
+  - `TorchMode.manual`: User-controlled torch button in bottom right corner
+- Light sensor integration for automatic torch control
+- Customizable torch button colors
+
+### Changed
+- Updated README to reflect automatic permission handling
+- Improved plugin lifecycle management with proper permission listener cleanup
+- Added torch control parameters to `MultiQrTrackerView`
+
 ## [0.0.1] - 2025-11-24
 
 ### Added
@@ -37,4 +57,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known Issues
 - None
 
+[0.1.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.1.0
 [0.0.1]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.0.1

@@ -39,4 +39,27 @@ class MethodChannelMultiQrTracker extends MultiQrTrackerPlatform {
       }
     });
   }
+
+  @override
+  Future<bool> enableTorch(final bool enabled) async {
+    try {
+      final result = await _channel.invokeMethod<bool>(
+        'enableTorch',
+        {'enabled': enabled},
+      );
+      return result ?? false;
+    } on PlatformException catch (e) {
+      throw Exception('Failed to enable torch: ${e.message}');
+    }
+  }
+
+  @override
+  Future<double> getLightLevel() async {
+    try {
+      final result = await _channel.invokeMethod<double>('getLightLevel');
+      return result ?? 0.0;
+    } on PlatformException catch (e) {
+      throw Exception('Failed to get light level: ${e.message}');
+    }
+  }
 }

@@ -6,9 +6,11 @@ import 'package:flutter/services.dart';
 import 'models/camera_resolution_preset.dart';
 import 'models/qr_code_info.dart';
 import 'models/qr_tracker_camera_orientation.dart';
+import 'models/torch_mode.dart';
 import 'platform/method_channel_multi_qr_tracker.dart';
 import 'widgets/qr_border_painter.dart';
 import 'widgets/scan_button.dart';
+import 'widgets/torch_button.dart';
 
 /// A widget that displays a camera view and detects multiple QR codes
 /// simultaneously.
@@ -42,6 +44,7 @@ class MultiQrTrackerView extends StatefulWidget {
     required this.onQrCodeScanned,
     this.cameraOrientation = QrTrackerCameraOrientation.portrait,
     this.cameraResolutionPreset,
+    this.torchMode = TorchMode.off,
     this.showScanFrame = false,
     this.scanFrameColor = Colors.white,
     this.scanFrameCornerLength = 40.0,
@@ -53,6 +56,8 @@ class MultiQrTrackerView extends StatefulWidget {
     this.cornerRadius = 12.0,
     this.scanButtonColor = Colors.blue,
     this.iconColor = Colors.white,
+    this.torchButtonBackgroundColor = Colors.black54,
+    this.torchButtonIconColor = Colors.white,
     this.onCameraError,
     this.onPermissionDenied,
     super.key,
@@ -104,6 +109,14 @@ class MultiQrTrackerView extends StatefulWidget {
   /// default resolution.
   final CameraResolutionPreset? cameraResolutionPreset;
 
+  /// Controls the torch (flashlight) behavior.
+  ///
+  /// Options:
+  /// - [TorchMode.off]: Torch is always off (default)
+  /// - [TorchMode.auto]: Torch automatically turns on in low light
+  /// - [TorchMode.manual]: Shows a torch button for manual control
+  final TorchMode torchMode;
+
   /// Whether to show a scan frame with corner indicators. Defaults to false.
   final bool showScanFrame;
 
@@ -138,6 +151,12 @@ class MultiQrTrackerView extends StatefulWidget {
   /// Color for icons in the scan buttons. Defaults to white.
   final Color iconColor;
 
+  /// Background color for the torch button. Defaults to black54.
+  final Color torchButtonBackgroundColor;
+
+  /// Icon color for the torch button. Defaults to white.
+  final Color torchButtonIconColor;
+
   /// Callback invoked when a camera error occurs.
   final void Function(String error)? onCameraError;
 
@@ -156,11 +175,45 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
   double _cameraWidth = 1920;
   double _cameraHeight = 1080;
   bool _isInitialized = false;
+  bool _isTorchEnabled = false;
+  Timer? _lightSensorTimer;
 
   @override
   void initState() {
     super.initState();
     unawaited(_initializeCamera());
+  }
+
+  Future<void> _initializeTorchMode() async {
+    if (widget.torchMode == TorchMode.auto) {
+      // Check light level periodically
+      _lightSensorTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+        if (!mounted || !_isInitialized) return;
+        try {
+          final lightLevel = await _platform.getLightLevel();
+          // Turn on torch if light level is below 10 lux (dark environment)
+          final shouldEnable = lightLevel < 10;
+          if (shouldEnable != _isTorchEnabled) {
+            await _toggleTorch(shouldEnable);
+          }
+        } catch (e) {
+          // Ignore sensor errors
+        }
+      });
+    }
+  }
+
+  Future<void> _toggleTorch(bool enabled) async {
+    try {
+      await _platform.enableTorch(enabled);
+      if (mounted) {
+        setState(() {
+          _isTorchEnabled = enabled;
+        });
+      }
+    } catch (e) {
+      // Ignore torch errors (device may not have flash)
+    }
   }
 
   Future<void> _initializeCamera() async {
@@ -191,6 +244,7 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
         _cameraHeight = (result['height'] as int?)?.toDouble() ?? 1080;
         _isInitialized = true;
       });
+      await _initializeTorchMode();
     } on Exception catch (e) {
       widget.onCameraError?.call(e.toString());
     }
@@ -261,6 +315,7 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
 
   @override
   void dispose() {
+    _lightSensorTimer?.cancel();
     unawaited(_platform.dispose());
     // Reset orientation to auto when disposing
     unawaited(
@@ -459,6 +514,19 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
           iconOnlyColor: widget.iconColor,
         ),
       ),
+
+      // Torch button (manual mode only)
+      if (widget.torchMode == TorchMode.manual && _isInitialized)
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: TorchButton(
+            isEnabled: _isTorchEnabled,
+            onPressed: () => _toggleTorch(!_isTorchEnabled),
+            backgroundColor: widget.torchButtonBackgroundColor,
+            iconColor: widget.torchButtonIconColor,
+          ),
+        ),
     ],
   );
 }

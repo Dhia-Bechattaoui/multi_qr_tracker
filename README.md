@@ -18,7 +18,7 @@ This package was created to provide reliable multi-QR code detection with a **na
 - 🚧 iOS and landscape orientations coming in future updates
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Dhia-Bechattaoui/multi_qr_tracker/main/example.gif" width="300" alt="Multi QR Tracker Demo">
+  <img src="assets/example.gif" width="300" alt="Multi QR Tracker Demo">
 </p>
 
 ## ✨ Features
@@ -26,9 +26,11 @@ This package was created to provide reliable multi-QR code detection with a **na
 - 🔍 **Multi-QR Code Detection**: Detect and track multiple QR codes simultaneously in real-time
 - 📏 **Dynamic Borders**: Borders automatically adjust size as you move closer or further from QR codes
 - 🎯 **Adaptive Scan Buttons**: Full buttons with icon and text for large QR codes, icon-only for small ones
+- 🔦 **Smart Torch Control**: Three modes - off, auto (turns on in dark), or manual button control
 - 🎯 **Optional Scan Frame**: Show corner indicators to guide users where to position QR codes
 - 🎨 **Fully Customizable**: Colors, border width, padding, corner radius, scan frame style, and more
 - 🚀 **High Performance**: Smooth real-time tracking with CameraX and ML Kit Barcode Scanning
+- 🔐 **Zero Setup Required**: Automatic permission handling - no AndroidManifest.xml configuration needed
 - 🤖 **Native Android Implementation**: Direct CameraX integration for optimal performance
 - 📱 **Current Support**: Android (API 21+) in portrait orientation
 - 🔮 **Coming Soon**: iOS support and landscape orientation
@@ -47,7 +49,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  multi_qr_tracker: ^0.0.1
+  multi_qr_tracker: ^0.1.0
 ```
 
 Then run:
@@ -60,14 +62,12 @@ flutter pub get
 
 #### Android
 
-Add camera permission to your `AndroidManifest.xml`:
+**No manual setup required!** The package automatically:
+- ✅ Declares camera permissions in the manifest (merged automatically)
+- ✅ Requests runtime camera permissions when needed
+- ✅ Handles permission results
 
-```xml
-<uses-permission android:name="android.permission.CAMERA" />
-<uses-feature android:name="android.hardware.camera" />
-```
-
-Set minimum SDK version to 21 in `android/app/build.gradle`:
+Just ensure your minimum SDK version is 21 or higher in `android/app/build.gradle`:
 
 ```gradle
 minSdkVersion 21
@@ -97,6 +97,28 @@ class QRScannerPage extends StatelessWidget {
 }
 ```
 
+### Torch (Flashlight) Control
+
+```dart
+// Manual control - shows a torch button
+MultiQrTrackerView(
+  onQrCodeScanned: (value) => print(value),
+  torchMode: TorchMode.manual,
+)
+
+// Auto mode - turns on in low light
+MultiQrTrackerView(
+  onQrCodeScanned: (value) => print(value),
+  torchMode: TorchMode.auto,
+)
+
+// Always off (default)
+MultiQrTrackerView(
+  onQrCodeScanned: (value) => print(value),
+  torchMode: TorchMode.off,
+)
+```
+
 ### Advanced Example
 
 ```dart
@@ -106,6 +128,9 @@ MultiQrTrackerView(
       SnackBar(content: Text('Scanned: $value')),
     );
   },
+  
+  // Torch control: off, auto, or manual
+  torchMode: TorchMode.manual,
   
   // Customize QR code borders
   borderColor: Colors.blue,
@@ -139,12 +164,15 @@ MultiQrTrackerView(
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `onQrCodeScanned` | `Function(String)` | **required** | Callback when QR code is scanned |
+| `torchMode` | `TorchMode` | `TorchMode.off` | Torch control: `off`, `auto`, or `manual` |
 | `borderColor` | `Color` | `Colors.green` | Color of detection borders |
 | `borderWidth` | `double` | `3.0` | Width of border lines |
 | `borderPadding` | `double` | `8.0` | Extra padding around QR codes |
 | `cornerRadius` | `double` | `12.0` | Border corner radius |
 | `scanButtonColor` | `Color` | `Colors.blue` | Scan button background color |
 | `iconColor` | `Color` | `Colors.white` | Scan button icon color |
+| `torchButtonBackgroundColor` | `Color` | `Colors.black54` | Torch button background color (manual mode) |
+| `torchButtonIconColor` | `Color` | `Colors.white` | Torch button icon color (manual mode) |
 | `showScanFrame` | `bool` | `false` | Show scan frame with corner indicators |
 | `scanFrameColor` | `Color` | `Colors.white` | Color of scan frame corners |
 | `scanFrameSize` | `double` | `250.0` | Size of scan frame (width and height) |
@@ -155,12 +183,13 @@ MultiQrTrackerView(
 
 ## 📊 How It Works
 
-1. **Native Camera**: Uses CameraX for camera preview and image capture
-2. **Detection**: ML Kit Barcode Scanning detects QR codes in real-time
-3. **Coordinate Mapping**: Transforms camera coordinates to screen coordinates with BoxFit.cover
-4. **Border Rendering**: Draws dynamic borders using `CustomPainter`
-5. **Adaptive UI**: Automatically switches between full button and icon-only based on QR code size
-6. **Scan Frame**: Optional corner indicators to guide user positioning
+1. **Automatic Permission Handling**: Requests camera permission at runtime when first initialized
+2. **Native Camera**: Uses CameraX for camera preview and image capture
+3. **Detection**: ML Kit Barcode Scanning detects QR codes in real-time
+4. **Coordinate Mapping**: Transforms camera coordinates to screen coordinates with BoxFit.cover
+5. **Border Rendering**: Draws dynamic borders using `CustomPainter`
+6. **Adaptive UI**: Automatically switches between full button and icon-only based on QR code size
+7. **Scan Frame**: Optional corner indicators to guide user positioning
 
 ## 🔧 API Reference
 
@@ -275,7 +304,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of changes.
 - [ ] Landscape orientation support
 - [ ] Auto-rotate support
 - [ ] Barcode format detection (EAN, Code128, etc.)
-- [ ] Flashlight control
+- [x] Flashlight control (off, auto, manual modes)
 - [ ] Zoom controls
 - [ ] Image picker scanning
 - [ ] Custom overlay widgets

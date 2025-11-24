@@ -99,6 +99,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: MultiQrTrackerView(
         showScanFrame: true,
+        torchMode: TorchMode.manual, // Try TorchMode.auto or TorchMode.off
         onQrCodeScanned: (String value) {
           setState(() {
             if (!_scannedCodes.contains(value)) {
