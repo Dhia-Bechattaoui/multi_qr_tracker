@@ -61,7 +61,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  multi_qr_tracker: ^0.2.0
+  multi_qr_tracker: ^0.3.0
 ```
 
 Then run:
@@ -103,6 +103,7 @@ class QRScannerPage extends StatelessWidget {
           print('Scanned: $value');
           // Handle scanned QR code
         },
+        // Auto-scan enabled by default after 2 seconds
       ),
     );
   }
@@ -122,6 +123,27 @@ MultiQrTrackerView(
 MultiQrTrackerView(
   onQrCodeScanned: (value) => print(value),
   // borderColor: null (default), generates unique colors
+)
+```
+
+### Automatic Scanning
+
+```dart
+// Default: auto-scan after 2 seconds (enabled by default)
+MultiQrTrackerView(
+  onQrCodeScanned: (value) => print(value),
+)
+
+// Custom delay: auto-scan after 5 seconds
+MultiQrTrackerView(
+  onQrCodeScanned: (value) => print(value),
+  autoScanConfig: AutoScanConfig(scanDelay: Duration(seconds: 5)),
+)
+
+// Manual only: disable auto-scan (requires button press)
+MultiQrTrackerView(
+  onQrCodeScanned: (value) => print(value),
+  autoScanConfig: AutoScanConfig(enabled: false),
 )
 ```
 
@@ -200,6 +222,7 @@ MultiQrTrackerView(
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `onQrCodeScanned` | `Function(String)` | **required** | Callback when QR code is scanned |
+| `autoScanConfig` | `AutoScanConfig` | `enabled: true, delay: 2s` | Auto-scan configuration: enabled flag and delay duration |
 | `torchMode` | `TorchMode` | `TorchMode.off` | Torch control: `off`, `auto`, or `manual` |
 | `torchButtonPosition` | `TorchButtonPosition` | `bottomRight` | Torch button position: `topLeft`, `topRight`, `bottomLeft`, `bottomRight` |
 | `borderColor` | `Color?` | `null` | Border color: specific color or null for auto-mode |
@@ -223,10 +246,11 @@ MultiQrTrackerView(
 1. **Automatic Permission Handling**: Requests camera permission at runtime when first initialized
 2. **Native Camera**: Uses CameraX for camera preview and image capture
 3. **Detection**: ML Kit Barcode Scanning detects QR codes in real-time
-4. **Coordinate Mapping**: Transforms camera coordinates to screen coordinates with BoxFit.cover
-5. **Border Rendering**: Draws dynamic borders using `CustomPainter`
-6. **Adaptive UI**: Automatically switches between full button and icon-only based on QR code size
-7. **Scan Frame**: Optional corner indicators to guide user positioning
+4. **Auto-Scan Timer**: Automatically triggers scanning after configured delay (default 2 seconds)
+5. **Coordinate Mapping**: Transforms camera coordinates to screen coordinates with BoxFit.cover
+6. **Border Rendering**: Draws dynamic borders using `CustomPainter`
+7. **Adaptive UI**: Automatically switches between full button and icon-only based on QR code size
+8. **Scan Frame**: Optional corner indicators to guide user positioning
 
 ## 🔧 API Reference
 

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-11-24
+
+### Added
+- Automatic scanning feature that triggers after a configurable delay
+- `AutoScanConfig` class with `enabled` flag and `scanDelay` duration
+- Default auto-scan enabled after 2 seconds (can be customized or disabled)
+- Per-QR code timer management for accurate auto-scan triggering
+- Automatic timer cleanup when QR codes leave detection area
+
+### Changed
+- Scanning behavior: now auto-scans by default (can be disabled with `autoScanConfig`)
+- Improved user experience by eliminating need to manually press scan button for most use cases
+
 ## [0.2.0] - 2025-11-24
 
 ### Added
@@ -75,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known Issues
 - None
 
+[0.3.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.3.0
 [0.2.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.2.0
 [0.1.1]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.1.1
 [0.1.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.1.0

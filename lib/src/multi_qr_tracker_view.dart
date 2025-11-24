@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'models/auto_scan_config.dart';
 import 'models/camera_resolution_preset.dart';
 import 'models/qr_code_info.dart';
 import 'models/qr_tracker_camera_orientation.dart';
@@ -45,6 +46,7 @@ class MultiQrTrackerView extends StatefulWidget {
     required this.onQrCodeScanned,
     this.cameraOrientation = QrTrackerCameraOrientation.portrait,
     this.cameraResolutionPreset,
+    this.autoScanConfig = const AutoScanConfig(),
     this.torchMode = TorchMode.off,
     this.torchButtonPosition = TorchButtonPosition.bottomRight,
     this.showScanFrame = false,
@@ -110,6 +112,30 @@ class MultiQrTrackerView extends StatefulWidget {
   /// Note: This parameter is currently for future use. The camera uses
   /// default resolution.
   final CameraResolutionPreset? cameraResolutionPreset;
+
+  /// Configuration for automatic scanning behavior.
+  ///
+  /// By default, automatic scanning is enabled with a 2-second delay.
+  /// Set [AutoScanConfig.enabled] to false to require manual button press.
+  ///
+  /// Example:
+  /// ```dart
+  /// // Default: auto-scan after 2 seconds
+  /// MultiQrTrackerView(onQrCodeScanned: (value) => print(value))
+  ///
+  /// // Custom delay: auto-scan after 5 seconds
+  /// MultiQrTrackerView(
+  ///   onQrCodeScanned: (value) => print(value),
+  ///   autoScanConfig: AutoScanConfig(scanDelay: Duration(seconds: 5)),
+  /// )
+  ///
+  /// // Manual only: disable auto-scan
+  /// MultiQrTrackerView(
+  ///   onQrCodeScanned: (value) => print(value),
+  ///   autoScanConfig: AutoScanConfig(enabled: false),
+  /// )
+  /// ```
+  final AutoScanConfig autoScanConfig;
 
   /// Controls the torch (flashlight) behavior.
   ///
@@ -191,6 +217,9 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
   bool _isInitialized = false;
   bool _isTorchEnabled = false;
   Timer? _lightSensorTimer;
+  Timer? _autoScanTimer;
+  final Map<String, Timer?> _qrAutoScanTimers = <String, Timer>{};
+  final Set<String> _qrCodesWithActiveTimers = <String>{};
 
   @override
   void initState() {
@@ -333,6 +362,12 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
   @override
   void dispose() {
     _lightSensorTimer?.cancel();
+    _autoScanTimer?.cancel();
+    for (final timer in _qrAutoScanTimers.values) {
+      timer?.cancel();
+    }
+    _qrAutoScanTimers.clear();
+    _qrCodesWithActiveTimers.clear();
     unawaited(_platform.dispose());
     // Reset orientation to auto when disposing
     unawaited(
@@ -348,6 +383,7 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
 
   void _onBarcodesDetected(final List<Map<String, dynamic>> barcodes) {
     final qrCodes = <QrCodeInfo>[];
+    final currentQrValues = <String>{};
 
     // Get screen size once for filtering
     final renderBox = context.findRenderObject() as RenderBox?;
@@ -399,6 +435,7 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
 
       // Only include QR code if at least 10% of it is visible on screen
       if (qrArea > 0 && overlapArea / qrArea > 0.1) {
+        currentQrValues.add(value);
         qrCodes.add(
           QrCodeInfo(
             value: value,
@@ -406,7 +443,31 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
             corners: cornerPoints,
           ),
         );
+
+        // Start auto-scan timer for new QR codes
+        if (widget.autoScanConfig.enabled &&
+            !_scannedValues.contains(value) &&
+            !_qrCodesWithActiveTimers.contains(value)) {
+          _qrCodesWithActiveTimers.add(value);
+          _qrAutoScanTimers[value] = Timer(widget.autoScanConfig.scanDelay, () {
+            if (mounted && currentQrValues.contains(value)) {
+              _handleScanPressed(value);
+            }
+            _qrCodesWithActiveTimers.remove(value);
+            _qrAutoScanTimers.remove(value);
+          });
+        }
       }
+    }
+
+    // Cancel timers for QR codes no longer detected
+    final removedQrValues = _qrCodesWithActiveTimers.difference(
+      currentQrValues,
+    );
+    for (final value in removedQrValues) {
+      _qrAutoScanTimers[value]?.cancel();
+      _qrAutoScanTimers.remove(value);
+      _qrCodesWithActiveTimers.remove(value);
     }
 
     if (mounted) {

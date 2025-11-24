@@ -15,6 +15,7 @@
 /// Future updates will include iOS support and landscape orientation.
 library;
 
+export 'src/models/auto_scan_config.dart';
 export 'src/models/qr_code_info.dart';
 export 'src/models/qr_tracker_camera_orientation.dart';
 export 'src/models/torch_button_position.dart';
