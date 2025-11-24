@@ -17,6 +17,10 @@ This package was created to provide reliable multi-QR code detection with a **na
 - ✅ Portrait orientation
 - 🚧 iOS and landscape orientations coming in future updates
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Dhia-Bechattaoui/multi_qr_tracker/main/example.gif" width="300" alt="Multi QR Tracker Demo">
+</p>
+
 ## ✨ Features
 
 - 🔍 **Multi-QR Code Detection**: Detect and track multiple QR codes simultaneously in real-time
