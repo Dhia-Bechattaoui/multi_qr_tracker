@@ -50,7 +50,7 @@ class MultiQrTrackerView extends StatefulWidget {
     this.scanFrameCornerLength = 40.0,
     this.scanFrameCornerWidth = 4.0,
     this.scanFrameSize = 250.0,
-    this.borderColor = Colors.green,
+    this.borderColor,
     this.borderWidth = 3.0,
     this.borderPadding = 8.0,
     this.cornerRadius = 12.0,
@@ -132,8 +132,11 @@ class MultiQrTrackerView extends StatefulWidget {
   /// Size of the scan frame (width and height). Defaults to 250.0.
   final double scanFrameSize;
 
-  /// Color of the QR code detection borders. Defaults to green.
-  final Color borderColor;
+  /// Color of the QR code detection borders.
+  /// If null, random colors will be generated
+  /// (same color for same QR code value).
+  /// If provided, all borders will use this color.
+  final Color? borderColor;
 
   /// Width of the border lines in pixels. Defaults to 3.0.
   final double borderWidth;

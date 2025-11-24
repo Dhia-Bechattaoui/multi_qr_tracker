@@ -9,7 +9,7 @@ class QrBorderPainter extends CustomPainter {
   /// Creates a [QrBorderPainter] with the given QR codes and styling options.
   QrBorderPainter({
     required this.qrCodes,
-    this.borderColor = Colors.green,
+    this.borderColor,
     this.borderWidth = 3.0,
     this.borderPadding = 8.0,
     this.cornerRadius = 12.0,
@@ -18,8 +18,9 @@ class QrBorderPainter extends CustomPainter {
   /// List of detected QR codes to draw borders around
   final List<QrCodeInfo> qrCodes;
 
-  /// Default color of the border (used if not generating unique colors)
-  final Color borderColor;
+  /// Color of the border. If null, random colors will be generated
+  /// for each unique QR value.
+  final Color? borderColor;
 
   /// Width of the border line
   final double borderWidth;
@@ -46,14 +47,18 @@ class QrBorderPainter extends CustomPainter {
   @override
   void paint(final Canvas canvas, final Size size) {
     // Track colors used for each unique QR value
+    // (only when borderColor is null)
     final colorMap = <String, Color>{};
 
     for (final qrCode in qrCodes) {
-      // Get or generate color for this QR value
-      final color = colorMap.putIfAbsent(
-        qrCode.value,
-        () => _getColorForQrValue(qrCode.value),
-      );
+      // Use provided borderColor if set, otherwise generate
+      // unique color per QR value
+      final color =
+          borderColor ??
+          colorMap.putIfAbsent(
+            qrCode.value,
+            () => _getColorForQrValue(qrCode.value),
+          );
 
       final paint = Paint()
         ..color = color

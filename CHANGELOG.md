@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-11-24
+
+### Added
+- Smart border coloring: `borderColor` parameter now nullable for auto-color mode
+- When `borderColor` is null, QR codes with same value get same color
+- Added visual examples in README showing both color modes
+
+### Fixed
+- QR code border colors now properly respect the `borderColor` parameter
+- Fixed random color generation that was overriding user-specified border colors
+
 ## [0.1.0] - 2025-11-24
 
 ### Added
@@ -57,5 +68,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known Issues
 - None
 
+[0.1.1]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.1.1
 [0.1.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.1.0
 [0.0.1]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.0.1

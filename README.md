@@ -25,6 +25,7 @@ This package was created to provide reliable multi-QR code detection with a **na
 
 - 🔍 **Multi-QR Code Detection**: Detect and track multiple QR codes simultaneously in real-time
 - 📏 **Dynamic Borders**: Borders automatically adjust size as you move closer or further from QR codes
+- 🎨 **Smart Border Coloring**: Fixed color or auto-mode (same QR value = same color)
 - 🎯 **Adaptive Scan Buttons**: Full buttons with icon and text for large QR codes, icon-only for small ones
 - 🔦 **Smart Torch Control**: Three modes - off, auto (turns on in dark), or manual button control
 - 🎯 **Optional Scan Frame**: Show corner indicators to guide users where to position QR codes
@@ -37,9 +38,20 @@ This package was created to provide reliable multi-QR code detection with a **na
 
 ## 📱 Screenshots
 
-```
-[Camera view with multiple QR codes detected, each with green borders and "SCAN ME" buttons]
-```
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/with_border_color.jpg.jpg" width="300" alt="Fixed Border Color"><br>
+      <b>With borderColor</b><br>
+      All borders use specified color
+    </td>
+    <td align="center">
+      <img src="assets/without_border_color.jpg" width="300" alt="Auto Color per QR Code"><br>
+      <b>Without borderColor</b><br>
+      Auto colors (same QR = same color)
+    </td>
+  </tr>
+</table>
 
 ## 🚀 Getting Started
 
@@ -49,7 +61,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  multi_qr_tracker: ^0.1.0
+  multi_qr_tracker: ^0.1.1
 ```
 
 Then run:
@@ -95,6 +107,22 @@ class QRScannerPage extends StatelessWidget {
     );
   }
 }
+```
+
+### Border Color Modes
+
+```dart
+// Fixed color - all borders use specified color
+MultiQrTrackerView(
+  onQrCodeScanned: (value) => print(value),
+  borderColor: Colors.green, // All borders green
+)
+
+// Auto color mode - same QR value gets same color
+MultiQrTrackerView(
+  onQrCodeScanned: (value) => print(value),
+  // borderColor: null (default), generates unique colors
+)
 ```
 
 ### Torch (Flashlight) Control
@@ -165,7 +193,7 @@ MultiQrTrackerView(
 |-----------|------|---------|-------------|
 | `onQrCodeScanned` | `Function(String)` | **required** | Callback when QR code is scanned |
 | `torchMode` | `TorchMode` | `TorchMode.off` | Torch control: `off`, `auto`, or `manual` |
-| `borderColor` | `Color` | `Colors.green` | Color of detection borders |
+| `borderColor` | `Color?` | `null` | Border color: specific color or null for auto-mode |
 | `borderWidth` | `double` | `3.0` | Width of border lines |
 | `borderPadding` | `double` | `8.0` | Extra padding around QR codes |
 | `cornerRadius` | `double` | `12.0` | Border corner radius |
@@ -201,7 +229,7 @@ The main widget for QR code detection.
 MultiQrTrackerView({
   Key? key,
   required Function(String value) onQrCodeScanned,
-  Color borderColor = Colors.green,
+  Color? borderColor,
   double borderWidth = 3.0,
   double borderPadding = 8.0,
   double cornerRadius = 12.0,

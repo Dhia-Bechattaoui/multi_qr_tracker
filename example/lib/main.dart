@@ -99,6 +99,9 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: MultiQrTrackerView(
         showScanFrame: true,
+        borderColor: const Color(0xFF00FF00), // Bright green
+        borderWidth: 4.0,
+        scanButtonColor: Colors.green,
         torchMode: TorchMode.manual, // Try TorchMode.auto or TorchMode.off
         onQrCodeScanned: (String value) {
           setState(() {
