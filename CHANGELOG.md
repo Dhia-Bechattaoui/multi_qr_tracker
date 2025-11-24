@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-11-24
+
+### Added
+- Torch button position control with `torchButtonPosition` parameter
+- Four position options: topLeft, topRight, bottomLeft, bottomRight (default)
+- `TorchButtonPosition` enum for type-safe position selection
+
 ## [0.1.1] - 2025-11-24
 
 ### Added
@@ -68,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known Issues
 - None
 
+[0.2.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.2.0
 [0.1.1]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.1.1
 [0.1.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.1.0
 [0.0.1]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.0.1

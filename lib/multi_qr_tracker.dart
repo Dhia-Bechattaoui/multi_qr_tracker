@@ -17,6 +17,7 @@ library;
 
 export 'src/models/qr_code_info.dart';
 export 'src/models/qr_tracker_camera_orientation.dart';
+export 'src/models/torch_button_position.dart';
 export 'src/models/torch_mode.dart';
 export 'src/multi_qr_tracker_view.dart';
 export 'src/widgets/qr_border_painter.dart';

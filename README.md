@@ -61,7 +61,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  multi_qr_tracker: ^0.1.1
+  multi_qr_tracker: ^0.2.0
 ```
 
 Then run:
@@ -145,6 +145,13 @@ MultiQrTrackerView(
   onQrCodeScanned: (value) => print(value),
   torchMode: TorchMode.off,
 )
+
+// Custom position (topLeft, topRight, bottomLeft, bottomRight)
+MultiQrTrackerView(
+  onQrCodeScanned: (value) => print(value),
+  torchMode: TorchMode.manual,
+  torchButtonPosition: TorchButtonPosition.topRight,
+)
 ```
 
 ### Advanced Example
@@ -159,6 +166,7 @@ MultiQrTrackerView(
   
   // Torch control: off, auto, or manual
   torchMode: TorchMode.manual,
+  torchButtonPosition: TorchButtonPosition.bottomRight,
   
   // Customize QR code borders
   borderColor: Colors.blue,
@@ -193,6 +201,7 @@ MultiQrTrackerView(
 |-----------|------|---------|-------------|
 | `onQrCodeScanned` | `Function(String)` | **required** | Callback when QR code is scanned |
 | `torchMode` | `TorchMode` | `TorchMode.off` | Torch control: `off`, `auto`, or `manual` |
+| `torchButtonPosition` | `TorchButtonPosition` | `bottomRight` | Torch button position: `topLeft`, `topRight`, `bottomLeft`, `bottomRight` |
 | `borderColor` | `Color?` | `null` | Border color: specific color or null for auto-mode |
 | `borderWidth` | `double` | `3.0` | Width of border lines |
 | `borderPadding` | `double` | `8.0` | Extra padding around QR codes |

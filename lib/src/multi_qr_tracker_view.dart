@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'models/camera_resolution_preset.dart';
 import 'models/qr_code_info.dart';
 import 'models/qr_tracker_camera_orientation.dart';
+import 'models/torch_button_position.dart';
 import 'models/torch_mode.dart';
 import 'platform/method_channel_multi_qr_tracker.dart';
 import 'widgets/qr_border_painter.dart';
@@ -45,6 +46,7 @@ class MultiQrTrackerView extends StatefulWidget {
     this.cameraOrientation = QrTrackerCameraOrientation.portrait,
     this.cameraResolutionPreset,
     this.torchMode = TorchMode.off,
+    this.torchButtonPosition = TorchButtonPosition.bottomRight,
     this.showScanFrame = false,
     this.scanFrameColor = Colors.white,
     this.scanFrameCornerLength = 40.0,
@@ -116,6 +118,15 @@ class MultiQrTrackerView extends StatefulWidget {
   /// - [TorchMode.auto]: Torch automatically turns on in low light
   /// - [TorchMode.manual]: Shows a torch button for manual control
   final TorchMode torchMode;
+
+  /// Position of the torch button when [torchMode] is [TorchMode.manual].
+  ///
+  /// Options:
+  /// - [TorchButtonPosition.topLeft]: Top-left corner
+  /// - [TorchButtonPosition.topRight]: Top-right corner
+  /// - [TorchButtonPosition.bottomLeft]: Bottom-left corner
+  /// - [TorchButtonPosition.bottomRight]: Bottom-right corner (default)
+  final TorchButtonPosition torchButtonPosition;
 
   /// Whether to show a scan frame with corner indicators. Defaults to false.
   final bool showScanFrame;
@@ -524,8 +535,26 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
       // Torch button (manual mode only)
       if (widget.torchMode == TorchMode.manual && _isInitialized)
         Positioned(
-          right: 16,
-          bottom: 16,
+          left:
+              widget.torchButtonPosition == TorchButtonPosition.topLeft ||
+                  widget.torchButtonPosition == TorchButtonPosition.bottomLeft
+              ? 16
+              : null,
+          right:
+              widget.torchButtonPosition == TorchButtonPosition.topRight ||
+                  widget.torchButtonPosition == TorchButtonPosition.bottomRight
+              ? 16
+              : null,
+          top:
+              widget.torchButtonPosition == TorchButtonPosition.topLeft ||
+                  widget.torchButtonPosition == TorchButtonPosition.topRight
+              ? 16
+              : null,
+          bottom:
+              widget.torchButtonPosition == TorchButtonPosition.bottomLeft ||
+                  widget.torchButtonPosition == TorchButtonPosition.bottomRight
+              ? 16
+              : null,
           child: TorchButton(
             isEnabled: _isTorchEnabled,
             onPressed: () => _toggleTorch(!_isTorchEnabled),

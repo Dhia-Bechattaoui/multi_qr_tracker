@@ -103,6 +103,7 @@ class _HomePageState extends State<HomePage> {
         borderWidth: 4.0,
         scanButtonColor: Colors.green,
         torchMode: TorchMode.manual, // Try TorchMode.auto or TorchMode.off
+        torchButtonPosition: TorchButtonPosition.topLeft,
         onQrCodeScanned: (String value) {
           setState(() {
             if (!_scannedCodes.contains(value)) {
