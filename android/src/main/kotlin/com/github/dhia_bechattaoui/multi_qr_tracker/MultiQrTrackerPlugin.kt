@@ -1,0 +1,237 @@
+package com.github.dhia_bechattaoui.multi_qr_tracker
+
+import android.app.Activity
+import android.content.Context
+import android.graphics.Rect
+import android.util.Log
+import androidx.annotation.NonNull
+import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.view.TextureRegistry
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+
+class MultiQrTrackerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
+    private lateinit var channel: MethodChannel
+    private lateinit var context: Context
+    private var activity: Activity? = null
+    private var textureRegistry: TextureRegistry? = null
+    private var cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private var camera: Camera? = null
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var textureEntry: TextureRegistry.SurfaceTextureEntry? = null
+    private val barcodeScanner = BarcodeScanning.getClient()
+
+    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "multi_qr_tracker")
+        channel.setMethodCallHandler(this)
+        context = flutterPluginBinding.applicationContext
+        textureRegistry = flutterPluginBinding.textureRegistry
+    }
+
+    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+        when (call.method) {
+            "initialize" -> {
+                val orientation = call.argument<String>("orientation") ?: "auto"
+                initialize(orientation, result)
+            }
+            "dispose" -> {
+                dispose()
+                result.success(null)
+            }
+            else -> result.notImplemented()
+        }
+    }
+
+    private fun initialize(orientationMode: String, result: Result) {
+        val currentActivity = activity
+        if (currentActivity == null) {
+            result.error("NO_ACTIVITY", "Activity not available", null)
+            return
+        }
+
+        textureEntry = textureRegistry?.createSurfaceTexture()
+        if (textureEntry == null) {
+            result.error("NO_TEXTURE", "Could not create texture", null)
+            return
+        }
+
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        cameraProviderFuture.addListener({
+            try {
+                cameraProvider = cameraProviderFuture.get()
+                bindCamera(currentActivity, orientationMode, textureEntry!!.id(), result)
+            } catch (e: Exception) {
+                result.error("CAMERA_ERROR", e.message, null)
+            }
+        }, ContextCompat.getMainExecutor(context))
+    }
+
+    private fun bindCamera(activity: Activity, orientationMode: String, textureId: Long, result: Result) {
+        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+        // Get screen size to determine appropriate camera resolution
+        val displayMetrics = activity.resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+        
+        // For portrait mode, swap dimensions so camera outputs portrait aspect ratio
+        // This ensures camera naturally outputs taller images for portrait display
+        val targetResolution = if (orientationMode == "portrait") {
+            // Swap: request tall resolution (e.g., 720x1440 instead of 1440x720)
+            android.util.Size(screenHeight, screenWidth)
+        } else {
+            android.util.Size(screenWidth, screenHeight)
+        }
+
+        val preview = Preview.Builder()
+            .setTargetResolution(targetResolution)
+            .build()
+            .also {
+                it.setSurfaceProvider { request ->
+                    val surface = textureEntry?.surfaceTexture()
+                    if (surface != null) {
+                        surface.setDefaultBufferSize(
+                            request.resolution.width,
+                            request.resolution.height
+                        )
+                        request.provideSurface(
+                            android.view.Surface(surface),
+                            cameraExecutor
+                        ) { }
+                    }
+                }
+            }
+
+        val imageAnalysis = ImageAnalysis.Builder()
+            .setTargetResolution(targetResolution)
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build()
+            .also {
+                it.setAnalyzer(cameraExecutor) { imageProxy ->
+                    processImageProxy(imageProxy)
+                }
+            }
+
+        // Don't set target rotation - let camera use natural orientation
+        // This way coordinates will match the preview directly
+
+        try {
+            cameraProvider?.unbindAll()
+            camera = cameraProvider?.bindToLifecycle(
+                activity as LifecycleOwner,
+                cameraSelector,
+                preview,
+                imageAnalysis
+            )
+
+            val resolution = preview.resolutionInfo?.resolution
+            val resultMap = hashMapOf<String, Any>(
+                "textureId" to textureId,
+                "width" to (resolution?.width ?: 1920),
+                "height" to (resolution?.height ?: 1080)
+            )
+            result.success(resultMap)
+        } catch (e: Exception) {
+            result.error("BIND_ERROR", e.message, null)
+        }
+    }
+
+    @androidx.camera.core.ExperimentalGetImage
+    private fun processImageProxy(imageProxy: ImageProxy) {
+        val mediaImage = imageProxy.image
+        if (mediaImage != null) {
+            val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+            barcodeScanner.process(image)
+                .addOnSuccessListener { barcodes ->
+                    // Always send results to Flutter, even if empty list
+                    // This ensures borders are cleared when QR codes leave view
+                    sendBarcodesToFlutter(barcodes, imageProxy.width, imageProxy.height)
+                }
+                .addOnFailureListener { e ->
+                    Log.e("MultiQrTracker", "Barcode scanning failed", e)
+                }
+                .addOnCompleteListener {
+                    imageProxy.close()
+                }
+        } else {
+            imageProxy.close()
+        }
+    }
+
+    private fun sendBarcodesToFlutter(barcodes: List<Barcode>, imageWidth: Int, imageHeight: Int) {
+        val barcodesList = barcodes.map { barcode ->
+            val corners = barcode.cornerPoints?.map { point ->
+                mapOf(
+                    "x" to point.x.toDouble(),
+                    "y" to point.y.toDouble()
+                )
+            } ?: emptyList()
+
+            mapOf(
+                "value" to (barcode.rawValue ?: ""),
+                "corners" to corners,
+                "boundingBox" to barcode.boundingBox?.let {
+                    mapOf(
+                        "left" to it.left.toDouble(),
+                        "top" to it.top.toDouble(),
+                        "width" to it.width().toDouble(),
+                        "height" to it.height().toDouble()
+                    )
+                }
+            )
+        }
+
+        val result = mapOf(
+            "barcodes" to barcodesList,
+            "imageWidth" to imageWidth,
+            "imageHeight" to imageHeight
+        )
+
+        activity?.runOnUiThread {
+            channel.invokeMethod("onBarcodesDetected", result)
+        }
+    }
+
+    private fun dispose() {
+        cameraProvider?.unbindAll()
+        camera = null
+        textureEntry?.release()
+        textureEntry = null
+    }
+
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
+        cameraExecutor.shutdown()
+        barcodeScanner.close()
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+        activity = null
+        dispose()
+    }
+}

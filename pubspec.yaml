@@ -1,0 +1,41 @@
+name: multi_qr_tracker
+description: A Flutter package for detecting and tracking multiple QR codes simultaneously on Android with adaptive UI overlays. Native CameraX implementation with ML Kit.
+version: 0.0.1
+homepage: https://github.com/Dhia-Bechattaoui/multi_qr_tracker
+repository: https://github.com/Dhia-Bechattaoui/multi_qr_tracker
+issue_tracker: https://github.com/Dhia-Bechattaoui/multi_qr_tracker/issues
+documentation: https://github.com/Dhia-Bechattaoui/multi_qr_tracker#readme
+
+funding:
+  - https://github.com/sponsors/Dhia-Bechattaoui
+
+topics:
+  - qr-code
+  - qr-scanner
+  - multi-detection
+  - camera
+  - barcode
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.github.dhia_bechattaoui.multi_qr_tracker
+        pluginClass: MultiQrTrackerPlugin
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.0
+
+platforms:
+  android:
