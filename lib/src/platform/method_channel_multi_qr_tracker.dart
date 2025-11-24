@@ -41,12 +41,11 @@ class MethodChannelMultiQrTracker extends MultiQrTrackerPlatform {
   }
 
   @override
-  Future<bool> enableTorch(final bool enabled) async {
+  Future<bool> enableTorch({required final bool enabled}) async {
     try {
-      final result = await _channel.invokeMethod<bool>(
-        'enableTorch',
-        {'enabled': enabled},
-      );
+      final result = await _channel.invokeMethod<bool>('enableTorch', {
+        'enabled': enabled,
+      });
       return result ?? false;
     } on PlatformException catch (e) {
       throw Exception('Failed to enable torch: ${e.message}');

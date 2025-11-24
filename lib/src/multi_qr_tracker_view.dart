@@ -188,7 +188,9 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
     if (widget.torchMode == TorchMode.auto) {
       // Check light level periodically
       _lightSensorTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
-        if (!mounted || !_isInitialized) return;
+        if (!mounted || !_isInitialized) {
+          return;
+        }
         try {
           final lightLevel = await _platform.getLightLevel();
           // Turn on torch if light level is below 10 lux (dark environment)
@@ -196,23 +198,24 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
           if (shouldEnable != _isTorchEnabled) {
             await _toggleTorch(shouldEnable);
           }
-        } catch (e) {
-          // Ignore sensor errors
+        } on Exception catch (e) {
+          debugPrint('Light sensor error: $e');
         }
       });
     }
   }
 
-  Future<void> _toggleTorch(bool enabled) async {
+  Future<void> _toggleTorch(final bool enabled) async {
     try {
-      await _platform.enableTorch(enabled);
+      await _platform.enableTorch(enabled: enabled);
       if (mounted) {
         setState(() {
           _isTorchEnabled = enabled;
         });
       }
-    } catch (e) {
-      // Ignore torch errors (device may not have flash)
+    } on Exception catch (e) {
+      debugPrint('Torch error: $e');
+      widget.onCameraError?.call('Torch control failed: $e');
     }
   }
 

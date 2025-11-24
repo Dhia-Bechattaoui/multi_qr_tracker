@@ -24,31 +24,31 @@ class TorchButton extends StatelessWidget {
   final Color iconColor;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+  Widget build(final BuildContext context) => Container(
+    width: 56,
+    height: 56,
+    decoration: BoxDecoration(
+      color: backgroundColor,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: .3),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onPressed,
-            customBorder: const CircleBorder(),
-            child: Icon(
-              isEnabled ? Icons.flash_on : Icons.flash_off,
-              color: isEnabled ? Colors.yellow : iconColor,
-              size: 28,
-            ),
-          ),
+      ],
+    ),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: Icon(
+          isEnabled ? Icons.flash_on : Icons.flash_off,
+          color: isEnabled ? Colors.yellow : iconColor,
+          size: 28,
         ),
-      );
+      ),
+    ),
+  );
 }

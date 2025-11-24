@@ -10,7 +10,7 @@ abstract class MultiQrTrackerPlatform {
   void setDetectionCallback(final void Function(Map<String, dynamic>) callback);
 
   /// Enables or disables the torch (flashlight).
-  Future<bool> enableTorch(final bool enabled);
+  Future<bool> enableTorch({required final bool enabled});
 
   /// Gets the current ambient light level from the device sensor.
   /// Returns the light level in lux (0 = dark, higher = brighter).

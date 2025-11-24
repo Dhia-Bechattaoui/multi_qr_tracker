@@ -4,15 +4,10 @@ import 'package:multi_qr_tracker/src/widgets/torch_button.dart';
 
 void main() {
   group('TorchButton', () {
-    testWidgets('renders correctly when disabled', (tester) async {
+    testWidgets('renders correctly when disabled', (final tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TorchButton(
-              isEnabled: false,
-              onPressed: () {},
-            ),
-          ),
+          home: Scaffold(body: TorchButton(isEnabled: false, onPressed: () {})),
         ),
       );
 
@@ -20,15 +15,10 @@ void main() {
       expect(find.byIcon(Icons.flash_off), findsOneWidget);
     });
 
-    testWidgets('renders correctly when enabled', (tester) async {
+    testWidgets('renders correctly when enabled', (final tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TorchButton(
-              isEnabled: true,
-              onPressed: () {},
-            ),
-          ),
+          home: Scaffold(body: TorchButton(isEnabled: true, onPressed: () {})),
         ),
       );
 
@@ -36,7 +26,7 @@ void main() {
       expect(find.byIcon(Icons.flash_on), findsOneWidget);
     });
 
-    testWidgets('calls onPressed when tapped', (tester) async {
+    testWidgets('calls onPressed when tapped', (final tester) async {
       var pressed = false;
 
       await tester.pumpWidget(
@@ -56,7 +46,7 @@ void main() {
       expect(pressed, isTrue);
     });
 
-    testWidgets('uses custom colors', (tester) async {
+    testWidgets('uses custom colors', (final tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -77,7 +67,7 @@ void main() {
         ),
       );
 
-      final decoration = container.decoration as BoxDecoration;
+      final decoration = container.decoration! as BoxDecoration;
       expect(decoration.color, Colors.red);
     });
   });
