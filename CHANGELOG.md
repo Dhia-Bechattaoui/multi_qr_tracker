@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-11-25
+
+### Added
+- **Camera Lifecycle Control**: New `MultiQrTrackerController` for managing camera state
+  - `start()` method to resume camera and QR code detection
+  - `stop()` method to pause camera and conserve battery
+  - `toggleTorch()` and `setTorch()` for programmatic torch control
+  - Optional `controller` parameter in `MultiQrTrackerView` (backward compatible)
+  - Automatic controller creation when not provided
+- **Native Android Implementation**: Efficient camera pause/resume
+  - `startCamera()` and `stopCamera()` platform methods
+  - Unbinds/rebinds camera use cases without full reinitialization
+  - State tracking with `isCameraRunning` flag in Kotlin
+  - Keeps Preview use case in memory for fast resume
+- **App Lifecycle Integration**: Automatic camera management
+  - Camera pauses when app goes to background (inactive, paused, hidden, detached)
+  - Camera resumes when app returns to foreground
+  - Prevents camera resource waste during app switching
+- **Enhanced Example App**: Settings screen to test camera lifecycle
+  - Demonstrates proper stop/start sequence during navigation
+  - Shows camera state management best practices
+
+### Changed
+- Improved camera resource management with proper lifecycle handling
+- Better performance: no QR processing when scanner in background or hidden
+- Enhanced documentation with controller usage examples and benefits
+- Black screen display when camera is stopped for clear visual feedback
+
+### Fixed
+- Camera continuing to run when navigating away from scanner screen
+- Battery drain from continuous camera operation in background
+- `PlatformException` (NO_FLASH) when torch enabled during navigation
+- Torch control errors when camera is closed - now gracefully handled
+- Resource leaks from camera running during app lifecycle transitions
+
+### Technical Details
+- **Platform Interface**: Added `startCamera()` and `stopCamera()` to `MultiQrTrackerPlatform`
+- **Error Handling**: Silently catches `NO_FLASH` and `CAMERA_CLOSED` errors
+- **State Management**: Controller follows Flutter's `ChangeNotifier` pattern
+- **Native**: CameraX bind/unbind for efficient pause/resume
+- **Lifecycle**: Torch automatically disabled before camera stop to prevent errors
+
 ## [0.3.0] - 2025-11-24
 
 ### Added
@@ -88,6 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known Issues
 - None
 
+[0.4.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.4.0
 [0.3.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.3.0
 [0.2.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.2.0
 [0.1.1]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.1.1

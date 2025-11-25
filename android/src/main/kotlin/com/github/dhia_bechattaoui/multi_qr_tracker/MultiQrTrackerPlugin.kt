@@ -39,6 +39,9 @@ class MultiQrTrackerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
     private val barcodeScanner = BarcodeScanning.getClient()
     private var pendingResult: Result? = null
     private var pendingOrientation: String? = null
+    private var imageAnalysis: ImageAnalysis? = null
+    private var preview: Preview? = null
+    private var isCameraRunning: Boolean = false
     
     companion object {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 1001
@@ -64,6 +67,12 @@ class MultiQrTrackerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
             }
             "getLightLevel" -> {
                 getLightLevel(result)
+            }
+            "startCamera" -> {
+                startCamera(result)
+            }
+            "stopCamera" -> {
+                stopCamera(result)
             }
             "dispose" -> {
                 dispose()
@@ -160,7 +169,7 @@ class MultiQrTrackerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
             android.util.Size(screenWidth, screenHeight)
         }
 
-        val preview = Preview.Builder()
+        preview = Preview.Builder()
             .setTargetResolution(targetResolution)
             .build()
             .also {
@@ -179,7 +188,7 @@ class MultiQrTrackerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                 }
             }
 
-        val imageAnalysis = ImageAnalysis.Builder()
+        imageAnalysis = ImageAnalysis.Builder()
             .setTargetResolution(targetResolution)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
@@ -197,11 +206,12 @@ class MultiQrTrackerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
             camera = cameraProvider?.bindToLifecycle(
                 activity as LifecycleOwner,
                 cameraSelector,
-                preview,
-                imageAnalysis
+                preview!!,
+                imageAnalysis!!
             )
+            isCameraRunning = true
 
-            val resolution = preview.resolutionInfo?.resolution
+            val resolution = preview?.resolutionInfo?.resolution
             val resultMap = hashMapOf<String, Any>(
                 "textureId" to textureId,
                 "width" to (resolution?.width ?: 1920),
@@ -271,6 +281,12 @@ class MultiQrTrackerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
 
     private fun enableTorch(enabled: Boolean, result: Result) {
         try {
+            // Check if camera is available and running
+            if (camera == null || !isCameraRunning) {
+                result.error("CAMERA_CLOSED", "Camera is not running", null)
+                return
+            }
+            
             if (camera?.cameraInfo?.hasFlashUnit() == true) {
                 camera?.cameraControl?.enableTorch(enabled)
                 result.success(true)
@@ -322,9 +338,60 @@ class MultiQrTrackerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
         }
     }
 
+    private fun startCamera(result: Result) {
+        try {
+            val currentActivity = activity
+            if (currentActivity == null) {
+                result.error("NO_ACTIVITY", "Activity not available", null)
+                return
+            }
+
+            if (isCameraRunning) {
+                result.success(true)
+                return
+            }
+
+            if (cameraProvider != null && preview != null && imageAnalysis != null) {
+                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                cameraProvider?.unbindAll()
+                camera = cameraProvider?.bindToLifecycle(
+                    currentActivity as LifecycleOwner,
+                    cameraSelector,
+                    preview!!,
+                    imageAnalysis!!
+                )
+                isCameraRunning = true
+                result.success(true)
+            } else {
+                result.error("NOT_INITIALIZED", "Camera not initialized", null)
+            }
+        } catch (e: Exception) {
+            result.error("START_ERROR", e.message, null)
+        }
+    }
+
+    private fun stopCamera(result: Result) {
+        try {
+            if (!isCameraRunning) {
+                result.success(true)
+                return
+            }
+
+            cameraProvider?.unbindAll()
+            camera = null
+            isCameraRunning = false
+            result.success(true)
+        } catch (e: Exception) {
+            result.error("STOP_ERROR", e.message, null)
+        }
+    }
+
     private fun dispose() {
         cameraProvider?.unbindAll()
         camera = null
+        preview = null
+        imageAnalysis = null
+        isCameraRunning = false
         textureEntry?.release()
         textureEntry = null
     }

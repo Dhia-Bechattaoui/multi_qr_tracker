@@ -9,6 +9,7 @@ import 'models/qr_code_info.dart';
 import 'models/qr_tracker_camera_orientation.dart';
 import 'models/torch_button_position.dart';
 import 'models/torch_mode.dart';
+import 'multi_qr_tracker_controller.dart';
 import 'platform/method_channel_multi_qr_tracker.dart';
 import 'widgets/qr_border_painter.dart';
 import 'widgets/scan_button.dart';
@@ -44,6 +45,7 @@ class MultiQrTrackerView extends StatefulWidget {
   /// Creates a [MultiQrTrackerView] widget.
   const MultiQrTrackerView({
     required this.onQrCodeScanned,
+    this.controller,
     this.cameraOrientation = QrTrackerCameraOrientation.portrait,
     this.cameraResolutionPreset,
     this.autoScanConfig = const AutoScanConfig(),
@@ -71,6 +73,26 @@ class MultiQrTrackerView extends StatefulWidget {
   ///
   /// The [String] parameter contains the decoded QR code value.
   final void Function(String value) onQrCodeScanned;
+
+  /// Optional controller for programmatic camera control.
+  ///
+  /// Provides methods to start, stop, and control the camera.
+  /// If null, an internal controller is created automatically.
+  ///
+  /// Example:
+  /// ```dart
+  /// final controller = MultiQrTrackerController();
+  ///
+  /// MultiQrTrackerView(
+  ///   controller: controller,
+  ///   onQrCodeScanned: (value) => print(value),
+  /// )
+  ///
+  /// // Later:
+  /// controller.stop(); // Pause camera
+  /// controller.start(); // Resume camera
+  /// ```
+  final MultiQrTrackerController? controller;
 
   /// Controls the camera orientation behavior.
   ///
@@ -220,11 +242,44 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
   Timer? _autoScanTimer;
   final Map<String, Timer?> _qrAutoScanTimers = <String, Timer>{};
   final Set<String> _qrCodesWithActiveTimers = <String>{};
+  late MultiQrTrackerController _controller;
+  bool _isInternalController = false;
 
   @override
   void initState() {
     super.initState();
+    // Use provided controller or create internal one
+    if (widget.controller != null) {
+      _controller = widget.controller!;
+    } else {
+      _controller = MultiQrTrackerController();
+      _isInternalController = true;
+    }
+    _controller.addListener(_onControllerUpdate);
     unawaited(_initializeCamera());
+  }
+
+  void _onControllerUpdate() {
+    if (!mounted || !_isInitialized) return;
+
+    // Handle camera start/stop
+    if (_controller.isScanning) {
+      unawaited(_platform.startCamera());
+      // Handle torch control only when camera is running
+      if (widget.torchMode == TorchMode.manual) {
+        unawaited(_toggleTorch(_controller.torchEnabled));
+      }
+    } else {
+      // Turn off torch before stopping camera
+      if (_isTorchEnabled) {
+        unawaited(_toggleTorch(false));
+      }
+      unawaited(_platform.stopCamera());
+    }
+
+    setState(() {
+      // Rebuild to reflect controller state changes
+    });
   }
 
   Future<void> _initializeTorchMode() async {
@@ -361,6 +416,10 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
 
   @override
   void dispose() {
+    _controller.removeListener(_onControllerUpdate);
+    if (_isInternalController) {
+      _controller.dispose();
+    }
     _lightSensorTimer?.cancel();
     _autoScanTimer?.cancel();
     for (final timer in _qrAutoScanTimers.values) {
@@ -534,97 +593,106 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
   }
 
   @override
-  Widget build(final BuildContext context) => Stack(
-    children: <Widget>[
-      // Camera preview
-      if (_isInitialized && _textureId != null)
-        SizedBox.expand(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: _cameraWidth,
-              height: _cameraHeight,
-              child: Texture(textureId: _textureId!),
-            ),
-          ),
-        )
-      else
-        const Center(child: CircularProgressIndicator()),
+  Widget build(final BuildContext context) {
+    // Show black screen when camera is stopped
+    if (!_controller.isScanning) {
+      return const ColoredBox(color: Colors.black);
+    }
 
-      // Scan frame with corner indicators
-      if (widget.showScanFrame)
-        Center(
-          child: Container(
-            width: widget.scanFrameSize,
-            height: widget.scanFrameSize,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.transparent),
+    return Stack(
+      children: <Widget>[
+        // Camera preview
+        if (_isInitialized && _textureId != null)
+          SizedBox.expand(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _cameraWidth,
+                height: _cameraHeight,
+                child: Texture(textureId: _textureId!),
+              ),
             ),
-            child: CustomPaint(
-              painter: _ScanFramePainter(
-                color: widget.scanFrameColor,
-                cornerLength: widget.scanFrameCornerLength,
-                cornerWidth: widget.scanFrameCornerWidth,
+          )
+        else
+          const Center(child: CircularProgressIndicator()),
+
+        // Scan frame with corner indicators
+        if (widget.showScanFrame)
+          Center(
+            child: Container(
+              width: widget.scanFrameSize,
+              height: widget.scanFrameSize,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.transparent),
+              ),
+              child: CustomPaint(
+                painter: _ScanFramePainter(
+                  color: widget.scanFrameColor,
+                  cornerLength: widget.scanFrameCornerLength,
+                  cornerWidth: widget.scanFrameCornerWidth,
+                ),
               ),
             ),
           ),
-        ),
 
-      // QR code borders overlay
-      Positioned.fill(
-        child: CustomPaint(
-          painter: QrBorderPainter(
-            qrCodes: _detectedQrCodes,
-            borderColor: widget.borderColor,
-            borderWidth: widget.borderWidth,
-            borderPadding: widget.borderPadding,
-            cornerRadius: widget.cornerRadius,
+        // QR code borders overlay
+        Positioned.fill(
+          child: CustomPaint(
+            painter: QrBorderPainter(
+              qrCodes: _detectedQrCodes,
+              borderColor: widget.borderColor,
+              borderWidth: widget.borderWidth,
+              borderPadding: widget.borderPadding,
+              cornerRadius: widget.cornerRadius,
+            ),
           ),
         ),
-      ),
 
-      // Scan buttons overlay
-      ..._detectedQrCodes.map(
-        (final qrCode) => ScanButton(
-          qrCode: qrCode,
-          onPressed: () => _handleScanPressed(qrCode.value),
-          fullButtonColor: widget.scanButtonColor,
-          iconOnlyColor: widget.iconColor,
-        ),
-      ),
-
-      // Torch button (manual mode only)
-      if (widget.torchMode == TorchMode.manual && _isInitialized)
-        Positioned(
-          left:
-              widget.torchButtonPosition == TorchButtonPosition.topLeft ||
-                  widget.torchButtonPosition == TorchButtonPosition.bottomLeft
-              ? 16
-              : null,
-          right:
-              widget.torchButtonPosition == TorchButtonPosition.topRight ||
-                  widget.torchButtonPosition == TorchButtonPosition.bottomRight
-              ? 16
-              : null,
-          top:
-              widget.torchButtonPosition == TorchButtonPosition.topLeft ||
-                  widget.torchButtonPosition == TorchButtonPosition.topRight
-              ? 16
-              : null,
-          bottom:
-              widget.torchButtonPosition == TorchButtonPosition.bottomLeft ||
-                  widget.torchButtonPosition == TorchButtonPosition.bottomRight
-              ? 16
-              : null,
-          child: TorchButton(
-            isEnabled: _isTorchEnabled,
-            onPressed: () => _toggleTorch(!_isTorchEnabled),
-            backgroundColor: widget.torchButtonBackgroundColor,
-            iconColor: widget.torchButtonIconColor,
+        // Scan buttons overlay
+        ..._detectedQrCodes.map(
+          (final qrCode) => ScanButton(
+            qrCode: qrCode,
+            onPressed: () => _handleScanPressed(qrCode.value),
+            fullButtonColor: widget.scanButtonColor,
+            iconOnlyColor: widget.iconColor,
           ),
         ),
-    ],
-  );
+
+        // Torch button (manual mode only)
+        if (widget.torchMode == TorchMode.manual && _isInitialized)
+          Positioned(
+            left:
+                widget.torchButtonPosition == TorchButtonPosition.topLeft ||
+                    widget.torchButtonPosition == TorchButtonPosition.bottomLeft
+                ? 16
+                : null,
+            right:
+                widget.torchButtonPosition == TorchButtonPosition.topRight ||
+                    widget.torchButtonPosition ==
+                        TorchButtonPosition.bottomRight
+                ? 16
+                : null,
+            top:
+                widget.torchButtonPosition == TorchButtonPosition.topLeft ||
+                    widget.torchButtonPosition == TorchButtonPosition.topRight
+                ? 16
+                : null,
+            bottom:
+                widget.torchButtonPosition == TorchButtonPosition.bottomLeft ||
+                    widget.torchButtonPosition ==
+                        TorchButtonPosition.bottomRight
+                ? 16
+                : null,
+            child: TorchButton(
+              isEnabled: _isTorchEnabled,
+              onPressed: () => _toggleTorch(!_isTorchEnabled),
+              backgroundColor: widget.torchButtonBackgroundColor,
+              iconColor: widget.torchButtonIconColor,
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 /// Custom painter for drawing the scan frame with corner indicators.

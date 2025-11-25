@@ -15,4 +15,10 @@ abstract class MultiQrTrackerPlatform {
   /// Gets the current ambient light level from the device sensor.
   /// Returns the light level in lux (0 = dark, higher = brighter).
   Future<double> getLightLevel();
+
+  /// Starts or resumes the camera preview and QR code detection.
+  Future<bool> startCamera();
+
+  /// Stops or pauses the camera preview and QR code detection.
+  Future<bool> stopCamera();
 }

@@ -28,6 +28,8 @@ This package was created to provide reliable multi-QR code detection with a **na
 - 🎨 **Smart Border Coloring**: Fixed color or auto-mode (same QR value = same color)
 - 🎯 **Adaptive Scan Buttons**: Full buttons with icon and text for large QR codes, icon-only for small ones
 - 🔦 **Smart Torch Control**: Three modes - off, auto (turns on in dark), or manual button control
+- ⏱️ **Automatic Scanning**: Configurable auto-scan after delay (default 2 seconds, can disable)
+- 🎮 **Camera Lifecycle Control**: Optional controller for start/stop and battery optimization
 - 🎯 **Optional Scan Frame**: Show corner indicators to guide users where to position QR codes
 - 🎨 **Fully Customizable**: Colors, border width, padding, corner radius, scan frame style, and more
 - 🚀 **High Performance**: Smooth real-time tracking with CameraX and ML Kit Barcode Scanning
@@ -61,7 +63,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  multi_qr_tracker: ^0.3.0
+  multi_qr_tracker: ^0.4.0
 ```
 
 Then run:
@@ -125,6 +127,45 @@ MultiQrTrackerView(
   // borderColor: null (default), generates unique colors
 )
 ```
+
+### Camera Control with Controller
+
+```dart
+class _ScannerScreenState extends State<ScannerScreen> {
+  final _controller = MultiQrTrackerController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _navigateToDetails() {
+    // Stop camera when navigating away (saves battery)
+    _controller.stop();
+    Navigator.push(context, /* ... */);
+  }
+
+  void _onReturn() {
+    // Resume camera when returning
+    _controller.start();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiQrTrackerView(
+      controller: _controller,
+      onQrCodeScanned: (value) => print(value),
+    );
+  }
+}
+```
+
+**Benefits of using a controller:**
+- 🔋 **Battery Saving**: Stop camera when not visible (tabs, modals, navigation)
+- ⚡ **Performance**: Pause processing when scanner is in background
+- 🎮 **Control**: Programmatic start/stop and torch control
+- 🔦 **Torch Toggle**: `controller.toggleTorch()` or `controller.setTorch(true)`
 
 ### Automatic Scanning
 
@@ -222,6 +263,7 @@ MultiQrTrackerView(
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `onQrCodeScanned` | `Function(String)` | **required** | Callback when QR code is scanned |
+| `controller` | `MultiQrTrackerController?` | `null` | Optional controller for programmatic camera control |
 | `autoScanConfig` | `AutoScanConfig` | `enabled: true, delay: 2s` | Auto-scan configuration: enabled flag and delay duration |
 | `torchMode` | `TorchMode` | `TorchMode.off` | Torch control: `off`, `auto`, or `manual` |
 | `torchButtonPosition` | `TorchButtonPosition` | `bottomRight` | Torch button position: `topLeft`, `topRight`, `bottomLeft`, `bottomRight` |

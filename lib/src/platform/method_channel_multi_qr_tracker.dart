@@ -48,6 +48,10 @@ class MethodChannelMultiQrTracker extends MultiQrTrackerPlatform {
       });
       return result ?? false;
     } on PlatformException catch (e) {
+      // Silently fail if camera is closed or no flash unit
+      if (e.code == 'NO_FLASH' || e.code == 'CAMERA_CLOSED') {
+        return false;
+      }
       throw Exception('Failed to enable torch: ${e.message}');
     }
   }
@@ -59,6 +63,26 @@ class MethodChannelMultiQrTracker extends MultiQrTrackerPlatform {
       return result ?? 0.0;
     } on PlatformException catch (e) {
       throw Exception('Failed to get light level: ${e.message}');
+    }
+  }
+
+  @override
+  Future<bool> startCamera() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('startCamera');
+      return result ?? false;
+    } on PlatformException catch (e) {
+      throw Exception('Failed to start camera: ${e.message}');
+    }
+  }
+
+  @override
+  Future<bool> stopCamera() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('stopCamera');
+      return result ?? false;
+    } on PlatformException catch (e) {
+      throw Exception('Failed to stop camera: ${e.message}');
     }
   }
 }
