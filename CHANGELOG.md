@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-12-01
+
+### Added
+- **iOS Platform Support**: Full feature parity with Android
+  - Native AVFoundation implementation for optimal performance
+  - Real-time multi-QR code detection using AVCaptureMetadataOutput
+  - Torch control (manual mode)
+  - Camera lifecycle management
+  - Portrait orientation support
+  - Automatic camera permission handling
+- **Updated Documentation**: Added iOS setup instructions and platform support details
+
+### Fixed
+- **Rotated QR Code Border Rendering**: Borders now rotate to match QR code orientation
+  - Borders drawn using actual corner points instead of axis-aligned bounding box
+  - Corner highlights properly align with rotated QR codes
+  - Borders accurately follow QR codes at any angle
+
+### Improved
+- **QR Code Border Persistence**: Borders no longer flicker when briefly losing detection
+  - Added 500ms debouncing delay before removing QR borders
+  - Prevents border flickering during quick camera movements
+  - Smooth user experience when scanning QR codes
+  - iOS: Periodic empty updates ensure borders clear when QR codes truly disappear
+
 ## [0.4.0] - 2025-11-25
 
 ### Added
@@ -130,6 +155,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known Issues
 - None
 
+[0.5.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.5.0
 [0.4.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.4.0
 [0.3.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.3.0
 [0.2.0]: https://github.com/dhia-bechattaoui/multi_qr_tracker/releases/tag/v0.2.0

@@ -5,17 +5,18 @@
 
 A powerful Flutter package for detecting and tracking multiple QR codes simultaneously with adaptive UI overlays.
 
-![Platform Support](https://img.shields.io/badge/platform-android-blue)
+![Platform Support](https://img.shields.io/badge/platform-android%20%7C%20ios-blue)
 ![Orientation Support](https://img.shields.io/badge/orientation-portrait-green)
 
 ## 🎯 Why This Package?
 
-This package was created to provide reliable multi-QR code detection with a **native Android implementation** using CameraX and ML Kit Barcode Scanning.
+This package was created to provide reliable multi-QR code detection with **native implementations** using CameraX (Android) and AVFoundation (iOS).
 
 **Current Status**: 
 - ✅ Android platform support
+- ✅ iOS platform support
 - ✅ Portrait orientation
-- 🚧 iOS and landscape orientations coming in future updates
+- 🚧 Landscape orientation coming in future updates
 
 <p align="center">
   <img src="assets/example.gif" width="300" alt="Multi QR Tracker Demo">
@@ -25,6 +26,7 @@ This package was created to provide reliable multi-QR code detection with a **na
 
 - 🔍 **Multi-QR Code Detection**: Detect and track multiple QR codes simultaneously in real-time
 - 📏 **Dynamic Borders**: Borders automatically adjust size as you move closer or further from QR codes
+- 🔄 **Rotated Border Rendering**: Borders rotate to match QR code orientation at any angle
 - 🎨 **Smart Border Coloring**: Fixed color or auto-mode (same QR value = same color)
 - 🎯 **Adaptive Scan Buttons**: Full buttons with icon and text for large QR codes, icon-only for small ones
 - 🔦 **Smart Torch Control**: Three modes - off, auto (turns on in dark), or manual button control
@@ -34,9 +36,9 @@ This package was created to provide reliable multi-QR code detection with a **na
 - 🎨 **Fully Customizable**: Colors, border width, padding, corner radius, scan frame style, and more
 - 🚀 **High Performance**: Smooth real-time tracking with CameraX and ML Kit Barcode Scanning
 - 🔐 **Zero Setup Required**: Automatic permission handling - no AndroidManifest.xml configuration needed
-- 🤖 **Native Android Implementation**: Direct CameraX integration for optimal performance
-- 📱 **Current Support**: Android (API 21+) in portrait orientation
-- 🔮 **Coming Soon**: iOS support and landscape orientation
+- 🤖 **Native Implementation**: CameraX (Android) and AVFoundation (iOS) for optimal performance
+- 📱 **Current Support**: Android (API 21+) and iOS (13.0+) in portrait orientation
+- 🔮 **Coming Soon**: Landscape orientation
 
 ## 📱 Screenshots
 
@@ -63,7 +65,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  multi_qr_tracker: ^0.4.0
+  multi_qr_tracker: ^0.5.0
 ```
 
 Then run:
@@ -85,6 +87,15 @@ Just ensure your minimum SDK version is 21 or higher in `android/app/build.gradl
 
 ```gradle
 minSdkVersion 21
+```
+
+#### iOS
+
+Add the `NSCameraUsageDescription` key to your `ios/Runner/Info.plist` file. This explains why your app needs camera access:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>This app needs camera access to scan QR codes</string>
 ```
 
 ## 💡 Usage
@@ -165,7 +176,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 - 🔋 **Battery Saving**: Stop camera when not visible (tabs, modals, navigation)
 - ⚡ **Performance**: Pause processing when scanner is in background
 - 🎮 **Control**: Programmatic start/stop and torch control
-- 🔦 **Torch Toggle**: `controller.toggleTorch()` or `controller.setTorch(true)`
+- 🔦 **Torch Toggle**: `controller.toggleTorch()` or `controller.setTorch(enabled: true)`
 
 ### Automatic Scanning
 
@@ -285,12 +296,12 @@ MultiQrTrackerView(
 
 ## 📊 How It Works
 
-1. **Automatic Permission Handling**: Requests camera permission at runtime when first initialized
-2. **Native Camera**: Uses CameraX for camera preview and image capture
-3. **Detection**: ML Kit Barcode Scanning detects QR codes in real-time
+1. **Automatic Permission Handling**: Requests camera permission at runtime when first initialized (both platforms)
+2. **Native Camera**: Uses CameraX (Android) and AVFoundation (iOS) for camera preview and capture
+3. **Detection**: ML Kit Barcode Scanning (Android) and AVCaptureMetadataOutput (iOS) detect QR codes in real-time
 4. **Auto-Scan Timer**: Automatically triggers scanning after configured delay (default 2 seconds)
 5. **Coordinate Mapping**: Transforms camera coordinates to screen coordinates with BoxFit.cover
-6. **Border Rendering**: Draws dynamic borders using `CustomPainter`
+6. **Border Rendering**: Draws dynamic borders using corner points to match QR code rotation
 7. **Adaptive UI**: Automatically switches between full button and icon-only based on QR code size
 8. **Scan Frame**: Optional corner indicators to guide user positioning
 
@@ -394,7 +405,9 @@ If you find this package helpful, please:
 ## 🙏 Acknowledgments
 
 - Built with [CameraX](https://developer.android.com/training/camerax) for native Android camera integration
-- Uses [ML Kit Barcode Scanning](https://developers.google.com/ml-kit/vision/barcode-scanning) for QR code detection
+- Built with [AVFoundation](https://developer.apple.com/av-foundation/) for native iOS camera integration
+- Uses [ML Kit Barcode Scanning](https://developers.google.com/ml-kit/vision/barcode-scanning) for Android QR code detection
+- Uses AVCaptureMetadataOutput for iOS QR code detection
 - Inspired by the need for reliable multi-QR code scanning in Flutter apps
 
 ## 📈 Changelog
@@ -403,14 +416,14 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of changes.
 
 ## 🔮 Roadmap
 
-- [ ] iOS platform support
-- [ ] Landscape orientation support
-- [ ] Auto-rotate support
-- [ ] Barcode format detection (EAN, Code128, etc.)
-- [x] Flashlight control (off, auto, manual modes)
-- [ ] Zoom controls
-- [ ] Image picker scanning
-- [ ] Custom overlay widgets
+- ✅ iOS platform support
+- ⬜ Landscape orientation support
+- ⬜ Auto-rotate support
+- ⬜ Barcode format detection (EAN, Code128, etc.)
+- ✅ Flashlight control (off, auto, manual modes)
+- ⬜ Zoom controls
+- ⬜ Image picker scanning
+- ⬜ Custom overlay widgets
 
 ---
 

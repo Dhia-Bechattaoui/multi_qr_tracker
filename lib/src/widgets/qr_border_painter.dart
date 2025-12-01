@@ -67,27 +67,41 @@ class QrBorderPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round;
 
-      // Create a rounded rectangle that's slightly larger than the QR code
-      final borderRect = RRect.fromRectAndRadius(
-        Rect.fromLTRB(
-          qrCode.boundingBox.left - borderPadding,
-          qrCode.boundingBox.top - borderPadding,
-          qrCode.boundingBox.right + borderPadding,
-          qrCode.boundingBox.bottom + borderPadding,
-        ),
-        Radius.circular(cornerRadius),
-      );
+      // Draw border using actual corner points to match QR rotation
+      if (qrCode.corners.length == 4) {
+        // Calculate center of QR code
+        final center = qrCode.center;
 
-      canvas.drawRRect(borderRect, paint);
+        // Expand corners outward from center for padding
+        final expandedCorners = qrCode.corners.map((final corner) {
+          final direction = corner - center;
+          final distance = direction.distance;
+          if (distance > 0) {
+            final normalized = direction / distance;
+            return corner + (normalized * borderPadding);
+          }
+          return corner;
+        }).toList();
 
-      // Draw corner highlights for better visibility
-      _drawCornerHighlights(canvas, borderRect, paint, color);
+        // Draw the quadrilateral border
+        final path = Path()
+          ..moveTo(expandedCorners[0].dx, expandedCorners[0].dy);
+        for (var i = 1; i < expandedCorners.length; i++) {
+          path.lineTo(expandedCorners[i].dx, expandedCorners[i].dy);
+        }
+        path.close();
+
+        canvas.drawPath(path, paint);
+
+        // Draw corner highlights for better visibility
+        _drawCornerHighlights(canvas, expandedCorners, paint, color);
+      }
     }
   }
 
   void _drawCornerHighlights(
     final Canvas canvas,
-    final RRect rect,
+    final List<Offset> corners,
     final Paint paint,
     final Color color,
   ) {
@@ -98,51 +112,36 @@ class QrBorderPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    // Top-left corner
-    canvas
-      ..drawLine(
-        Offset(rect.left, rect.top + cornerLength),
-        Offset(rect.left, rect.top),
-        cornerPaint,
-      )
-      ..drawLine(
-        Offset(rect.left, rect.top),
-        Offset(rect.left + cornerLength, rect.top),
-        cornerPaint,
-      )
-      // Top-right corner
-      ..drawLine(
-        Offset(rect.right - cornerLength, rect.top),
-        Offset(rect.right, rect.top),
-        cornerPaint,
-      )
-      ..drawLine(
-        Offset(rect.right, rect.top),
-        Offset(rect.right, rect.top + cornerLength),
-        cornerPaint,
-      )
-      // Bottom-left corner
-      ..drawLine(
-        Offset(rect.left, rect.bottom - cornerLength),
-        Offset(rect.left, rect.bottom),
-        cornerPaint,
-      )
-      ..drawLine(
-        Offset(rect.left, rect.bottom),
-        Offset(rect.left + cornerLength, rect.bottom),
-        cornerPaint,
-      )
-      // Bottom-right corner
-      ..drawLine(
-        Offset(rect.right - cornerLength, rect.bottom),
-        Offset(rect.right, rect.bottom),
-        cornerPaint,
-      )
-      ..drawLine(
-        Offset(rect.right, rect.bottom),
-        Offset(rect.right, rect.bottom - cornerLength),
-        cornerPaint,
-      );
+    // Draw L-shaped highlights at each corner
+    for (var i = 0; i < corners.length; i++) {
+      final current = corners[i];
+      final next = corners[(i + 1) % corners.length];
+      final prev = corners[(i - 1 + corners.length) % corners.length];
+
+      // Calculate direction vectors to adjacent corners
+      final toNext = next - current;
+      final toPrev = prev - current;
+
+      final nextLength = toNext.distance;
+      final prevLength = toPrev.distance;
+
+      if (nextLength > 0 && prevLength > 0) {
+        final nextDir = toNext / nextLength;
+        final prevDir = toPrev / prevLength;
+
+        // Draw short lines along each edge from the corner
+        final lineLength = cornerLength.clamp(0.0, nextLength / 3);
+        final lineLengthPrev = cornerLength.clamp(0.0, prevLength / 3);
+
+        canvas
+          ..drawLine(current, current + (nextDir * lineLength), cornerPaint)
+          ..drawLine(
+            current,
+            current + (prevDir * lineLengthPrev),
+            cornerPaint,
+          );
+      }
+    }
   }
 
   @override

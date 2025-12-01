@@ -70,27 +70,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),
-          RadioListTile<String>(
-            title: const Text('Automatic'),
-            subtitle: const Text('Scan automatically after 2 seconds'),
-            value: 'auto',
-            groupValue: _scanMode,
-            onChanged: (String? value) {
-              setState(() {
-                _scanMode = value ?? 'auto';
-              });
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SegmentedButton<String>(
+              segments: const [
+                ButtonSegment<String>(
+                  value: 'auto',
+                  label: Text('Automatic'),
+                  tooltip: 'Scan automatically after 2 seconds',
+                ),
+                ButtonSegment<String>(
+                  value: 'manual',
+                  label: Text('Manual'),
+                  tooltip: 'Press button to scan',
+                ),
+              ],
+              selected: {_scanMode},
+              onSelectionChanged: (Set<String> newSelection) {
+                setState(() {
+                  _scanMode = newSelection.first;
+                });
+              },
+            ),
           ),
-          RadioListTile<String>(
-            title: const Text('Manual'),
-            subtitle: const Text('Press button to scan'),
-            value: 'manual',
-            groupValue: _scanMode,
-            onChanged: (String? value) {
-              setState(() {
-                _scanMode = value ?? 'auto';
-              });
-            },
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
+              'Automatic: Scan automatically after 2 seconds\n'
+              'Manual: Press button to scan',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
           ),
           const Divider(),
           const Padding(
@@ -102,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: const Text('Version'),
-            subtitle: const Text('0.4.0'),
+            subtitle: const Text('0.5.0'),
             leading: const Icon(Icons.info),
           ),
           ListTile(

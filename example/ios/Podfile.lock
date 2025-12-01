@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - multi_qr_tracker (0.4.0):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - multi_qr_tracker (from `.symlinks/plugins/multi_qr_tracker/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  multi_qr_tracker:
+    :path: ".symlinks/plugins/multi_qr_tracker/ios"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  multi_qr_tracker: 9b593373df8b9c12dbba04ced6d0318cbb627144
+
+PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
+
+COCOAPODS: 1.16.2

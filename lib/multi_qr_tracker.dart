@@ -3,16 +3,18 @@
 ///
 /// Currently supports:
 /// - Android platform (API 21+)
+/// - iOS platform (iOS 13.0+)
 /// - Portrait orientation only
 ///
 /// This library provides:
 /// - Real-time multi-QR code detection with ML Kit
-/// - Native CameraX integration for optimal performance
+/// - Native CameraX (Android) and AVFoundation (iOS) integration
+///   for optimal performance
 /// - Dynamic border rendering that adapts to QR code distance
 /// - Adaptive scan button overlays (full button or icon-only based on size)
 /// - Optional scan frame with corner indicators
 ///
-/// Future updates will include iOS support and landscape orientation.
+/// Future updates will include landscape orientation.
 library;
 
 export 'src/models/auto_scan_config.dart';

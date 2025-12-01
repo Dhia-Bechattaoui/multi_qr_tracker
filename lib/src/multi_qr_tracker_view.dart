@@ -19,11 +19,11 @@ import 'widgets/torch_button.dart';
 /// simultaneously.
 ///
 /// **Currently supports:**
-/// - Android platform only
+/// - Android platform
+/// - iOS platform
 /// - Portrait orientation only
 ///
 /// **Future updates will include:**
-/// - iOS support
 /// - Landscape orientation support
 /// - Additional platform support
 ///
@@ -242,6 +242,10 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
   Timer? _autoScanTimer;
   final Map<String, Timer?> _qrAutoScanTimers = <String, Timer>{};
   final Set<String> _qrCodesWithActiveTimers = <String>{};
+  final Map<String, Timer?> _qrRemovalTimers =
+      <String, Timer>{}; // Delay before removing QR borders
+  final Map<String, QrCodeInfo> _lastSeenQrCodes =
+      <String, QrCodeInfo>{}; // Keep last position
   late MultiQrTrackerController _controller;
   bool _isInternalController = false;
 
@@ -260,7 +264,9 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
   }
 
   void _onControllerUpdate() {
-    if (!mounted || !_isInitialized) return;
+    if (!mounted || !_isInitialized) {
+      return;
+    }
 
     // Handle camera start/stop
     if (_controller.isScanning) {
@@ -341,11 +347,16 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
       final result = await _platform.initialize(_getOrientationString());
       setState(() {
         _textureId = result['textureId'] as int?;
-        _cameraWidth = (result['width'] as int?)?.toDouble() ?? 1920;
-        _cameraHeight = (result['height'] as int?)?.toDouble() ?? 1080;
+        _cameraWidth = (result['width'] as num?)?.toDouble() ?? 1920;
+        _cameraHeight = (result['height'] as num?)?.toDouble() ?? 1080;
         _isInitialized = true;
       });
       await _initializeTorchMode();
+      // After initialization, ensure camera starts if controller
+      // is in scanning state
+      if (_controller.isScanning && mounted) {
+        unawaited(_platform.startCamera());
+      }
     } on Exception catch (e) {
       widget.onCameraError?.call(e.toString());
     }
@@ -427,6 +438,11 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
     }
     _qrAutoScanTimers.clear();
     _qrCodesWithActiveTimers.clear();
+    for (final timer in _qrRemovalTimers.values) {
+      timer?.cancel();
+    }
+    _qrRemovalTimers.clear();
+    _lastSeenQrCodes.clear();
     unawaited(_platform.dispose());
     // Reset orientation to auto when disposing
     unawaited(
@@ -519,6 +535,51 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
       }
     }
 
+    // Handle QR code removal with debouncing
+    // Keep track of which QR codes are currently detected
+    final currentlyDetectedValues = currentQrValues.toSet();
+
+    // For QR codes that are currently detected, update their last seen info
+    for (final qrCode in qrCodes) {
+      _lastSeenQrCodes[qrCode.value] = qrCode;
+      // Cancel any pending removal timer for this QR code
+      _qrRemovalTimers[qrCode.value]?.cancel();
+      _qrRemovalTimers.remove(qrCode.value);
+    }
+
+    // For QR codes that were seen before but are not currently detected,
+    // start a removal timer (500ms delay)
+    final previouslyDetectedValues = _lastSeenQrCodes.keys.toSet();
+    final missingQrValues = previouslyDetectedValues.difference(
+      currentlyDetectedValues,
+    );
+
+    for (final value in missingQrValues) {
+      // Only start timer if one doesn't exist already
+      if (!_qrRemovalTimers.containsKey(value)) {
+        _qrRemovalTimers[value] = Timer(const Duration(milliseconds: 500), () {
+          // Remove the QR code after delay
+          if (mounted) {
+            setState(() {
+              _lastSeenQrCodes.remove(value);
+            });
+          }
+          _qrRemovalTimers.remove(value);
+        });
+      }
+    }
+
+    // Build final list: currently detected + recently missing
+    // (with pending removal)
+    final displayQrCodes = <QrCodeInfo>[
+      ...qrCodes, // Currently detected
+      // Add QR codes that are pending removal
+      for (final value in _qrRemovalTimers.keys)
+        if (_lastSeenQrCodes.containsKey(value) &&
+            !currentlyDetectedValues.contains(value))
+          _lastSeenQrCodes[value]!,
+    ];
+
     // Cancel timers for QR codes no longer detected
     final removedQrValues = _qrCodesWithActiveTimers.difference(
       currentQrValues,
@@ -531,7 +592,7 @@ class _MultiQrTrackerViewState extends State<MultiQrTrackerView> {
 
     if (mounted) {
       setState(() {
-        _detectedQrCodes = qrCodes;
+        _detectedQrCodes = displayQrCodes;
       });
     }
   }

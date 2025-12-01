@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:multi_qr_tracker/multi_qr_tracker.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'settings_screen.dart';
 
 void main() {
@@ -39,14 +38,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final List<String> _scannedCodes = <String>[];
   final MultiQrTrackerController _controller = MultiQrTrackerController();
-  bool _permissionGranted = false;
-  bool _permissionChecked = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkCameraPermission();
-  }
 
   @override
   void dispose() {
@@ -67,56 +58,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _checkCameraPermission() async {
-    final status = await Permission.camera.status;
-    if (status.isGranted) {
-      setState(() {
-        _permissionGranted = true;
-        _permissionChecked = true;
-      });
-    } else {
-      final result = await Permission.camera.request();
-      setState(() {
-        _permissionGranted = result.isGranted;
-        _permissionChecked = true;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!_permissionChecked) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    if (!_permissionGranted) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.camera_alt, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              const Text(
-                'Camera permission required',
-                style: TextStyle(fontSize: 18),
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () async {
-                  final result = await Permission.camera.request();
-                  setState(() {
-                    _permissionGranted = result.isGranted;
-                  });
-                },
-                child: const Text('Grant Permission'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Multi QR Tracker Demo'),

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../multi_qr_tracker.dart' show MultiQrTrackerView, TorchMode;
+
 /// Controls the [MultiQrTrackerView] camera and scanning behavior.
 ///
 /// This controller provides methods to start, stop, and control the torch
@@ -38,7 +40,7 @@ class MultiQrTrackerController extends ChangeNotifier {
   /// Creates a [MultiQrTrackerController].
   ///
   /// The camera starts in the scanning state by default.
-  MultiQrTrackerController({bool initiallyScanning = true})
+  MultiQrTrackerController({final bool initiallyScanning = true})
     : _isScanning = initiallyScanning;
 
   bool _isScanning;
@@ -62,7 +64,9 @@ class MultiQrTrackerController extends ChangeNotifier {
   ///
   /// This saves battery and processing power.
   void stop() {
-    if (!_isScanning) return;
+    if (!_isScanning) {
+      return;
+    }
     _isScanning = false;
     notifyListeners();
   }
@@ -75,7 +79,9 @@ class MultiQrTrackerController extends ChangeNotifier {
   /// - A modal is dismissed
   /// - You want to resume scanning
   void start() {
-    if (_isScanning) return;
+    if (_isScanning) {
+      return;
+    }
     _isScanning = true;
     notifyListeners();
   }
@@ -97,8 +103,10 @@ class MultiQrTrackerController extends ChangeNotifier {
   /// Note: This only works when [TorchMode.manual] is set in
   /// [MultiQrTrackerView]. For [TorchMode.auto], the torch is
   /// controlled automatically by ambient light levels.
-  void setTorch(bool enabled) {
-    if (_torchEnabled == enabled) return;
+  void setTorch({required final bool enabled}) {
+    if (_torchEnabled == enabled) {
+      return;
+    }
     _torchEnabled = enabled;
     notifyListeners();
   }
